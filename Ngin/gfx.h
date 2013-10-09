@@ -2,7 +2,7 @@
 #define _GFX_H_
 
 //#define _CRT_SECURE_NO_WARNINGS
-//#include "Mad.cpp"
+
 #include "tinyptc.h"
 #include <string>
 #include <iostream>
@@ -10,6 +10,7 @@
 
 
 // and link the libs!
+#pragma comment(lib, "winmm.lib")
 #pragma comment( lib, "corona.lib" )
 
 #include "corona.h"

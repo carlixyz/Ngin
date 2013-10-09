@@ -1,10 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <math.h>
-#include <time.h>
 
-
-//#include "tinyptc.h"
 
 //#include "playmu/playmu.h"
 
@@ -21,6 +18,8 @@
 #define rnd(n) (rand()%(n+1))
 
 #include "gfx.h"
+
+
 
 Sprite Test;
 
@@ -63,8 +62,7 @@ int main()
 	Vector2D dir	= {-1, 0};		//initial direction vector
 	Vector2D plane	= {0, 0.66};	//the 2d raycaster version of camera plane
 
-	double time		= 0;			//time of current frame
-	double oldTime	= 0;			//time of previous frame
+	unsigned long luiLastTime = timeGetTime(); 
 
 
 	ptc_open( "Raycaster", WIDTH, HEIGHT);
@@ -83,6 +81,7 @@ int main()
 	while( true)
 	{
 		//gfx::Cls( (255 << 16 | 240 << 8 | 200)) ;
+		gfx::Cls( 0) ;
 
 		for(int x = 0; x < WIDTH; x++)
 		{
@@ -188,6 +187,48 @@ int main()
 
 		}
 
+		// Calculando el tiempo en segundos
+        unsigned long luiActualTime = timeGetTime(); 
+        float lfTimestep = ((float)(luiActualTime - luiLastTime)/ 1000.0f);
+        luiLastTime     = luiActualTime;
+
+		//speed modifiers
+		double moveSpeed = lfTimestep * 5.0; //the constant value is in squares/second
+		double rotSpeed = lfTimestep * 3.0; //the constant value is in radians/second
+
+		//if(GetAsyncKeyState(VK_RIGHT)&KF_UP)
+		    if (GetAsyncKeyState(VK_UP)&KF_UP)
+			{
+			  if(worldMap[int(pos.x + dir.x * moveSpeed)][int(pos.y)] == false) pos.x += dir.x * moveSpeed;
+			  if(worldMap[int(pos.x)][int(pos.y + dir.y * moveSpeed)] == false) pos.y += dir.y * moveSpeed;
+			}
+			if (GetAsyncKeyState(VK_DOWN)&KF_UP)		//move backwards if no wall behind you
+			{
+			  if(worldMap[int(pos.x - dir.x * moveSpeed)][int(pos.y)] == false) pos.x -= dir.x * moveSpeed;
+			  if(worldMap[int(pos.x)][int(pos.y - dir.y * moveSpeed)] == false) pos.y -= dir.y * moveSpeed;
+			}
+  
+			if (GetAsyncKeyState(VK_RIGHT)&KF_UP)		//rotate to the right 		
+			{
+			  //both camera direction and camera plane must be rotated
+			  double oldDirX = dir.x;
+			  dir.x = dir.x * cos(-rotSpeed) - dir.y * sin(-rotSpeed);
+			  dir.y = oldDirX * sin(-rotSpeed) + dir.y * cos(-rotSpeed);
+			  double oldPlaneX = plane.x;
+			  plane.x = plane.x * cos(-rotSpeed) - plane.y * sin(-rotSpeed);
+			  plane.y = oldPlaneX * sin(-rotSpeed) + plane.y * cos(-rotSpeed);
+			}
+			
+			if (GetAsyncKeyState(VK_LEFT)&KF_UP)		//rotate to the left	
+			{
+			  //both camera direction and camera plane must be rotated
+			  double oldDirX = dir.x;
+			  dir.x = dir.x * cos(rotSpeed) - dir.y * sin(rotSpeed);
+			  dir.y = oldDirX * sin(rotSpeed) + dir.y * cos(rotSpeed);
+			  double oldPlaneX = plane.x;
+			  plane.x = plane.x * cos(rotSpeed) - plane.y * sin(rotSpeed);
+			  plane.y = oldPlaneX * sin(rotSpeed) + plane.y * cos(rotSpeed);
+			}
 
 		// This is hexadecimal notation goes from 0-9 to A-E (0-15)
 		//gfx::DrawBar(160-100, 10, 202, 6, 0x000000);
