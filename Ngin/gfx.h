@@ -3,6 +3,7 @@
 
 //#define _CRT_SECURE_NO_WARNINGS
 //#include "Mad.cpp"
+#include "tinyptc.h"
 #include <string>
 #include <iostream>
 #include <vector>
@@ -12,6 +13,36 @@
 #pragma comment( lib, "corona.lib" )
 
 #include "corona.h"
+
+struct Vector2D 
+{
+	double x, y;
+};
+struct Vector3D 
+{
+	double x, y, z;
+};
+struct SectorLine 
+{
+	Vector2D coord_1;
+	Vector2D coord_2;
+	bool solid;
+};
+struct Rect 
+{
+        double x_min, y_min, x_max, y_max;
+};
+
+//struct ColorRGB
+//{
+//  int r;
+//  int g;
+//  int b;
+//  
+//  ColorRGB(Uint8 r, Uint8 g, Uint8 b);
+//  ColorRGB(const ColorRGB8bit& color);
+//  ColorRGB();
+//};
 
 struct Sprite
 {
@@ -68,7 +99,7 @@ struct Platform
 namespace gfx{
 
 static DWORD ptc_screen[SIZE];
-DWORD screen[320*240];
+DWORD screen[HALF_W*HALF_H];
 
 // garbage collection (well,acoordly to Dr. Petters kindaof)
 #define GCNEW 0
@@ -221,7 +252,8 @@ bool LoadSprite(Sprite &sprite, char* filename)
 	sprite.height=height;
 
 	//// Prepare sprite data memory allocation
-	sprite.data=(DWORD*)malloc(width*height*sizeof(DWORD));
+	//sprite.data=(DWORD*)malloc(width*height*sizeof(DWORD));
+	sprite.data= new DWORD[width*height] ;
 
 	BYTE* Pix = (BYTE*)img->getPixels();
 	//
@@ -234,19 +266,6 @@ bool LoadSprite(Sprite &sprite, char* filename)
 		pixel|= *Pix++ <<16;
 		pixel|= *Pix++ <<8;
 		pixel|= *Pix++;
-
-		//byte red	= *Pix++;
-		//byte green= *Pix++;
-		//byte blue	= *Pix++;
-
-		//pixel|= red <<16;
-		//pixel|= green <<8;
-		//pixel|= blue;
-
-		//if( red ==255 && green ==240 &&  blue ==200)
-		//	pixel=0x00FFF0C8;
-		//  sprite.data[i]=pixel;
-
 
 		//if((int)GetByte(pixel, 2)==255 && (int)GetByte(pixel, 1)==240 && (int)GetByte(pixel, 0)==200)
 			
@@ -261,83 +280,8 @@ bool LoadSprite(Sprite &sprite, char* filename)
 		sprite.data[i]=pixel;
 	}
 
-	GCAdd(sprite.data, GCMALLOC);
+	GCAdd(sprite.data, GCNEWARRAY);
 	return true;
-
-#pragma region oldCode For LibPNG That Never Worked  
-	//// Open a file
-	//FILE *fp = fopen(filename, "rb");
-	//if(!fp )
-	//	return false;
-
-	//png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-	//if(!png_ptr)
-	//	return false;
-
-	//png_infop info_ptr = png_create_info_struct(png_ptr);
-	//if(!info_ptr)
-	//{
-	//	png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
-	//	return false;
-	//}
-	//png_init_io(png_ptr, fp);
-
-
-	//png_read_info(png_ptr, info_ptr);
-	//png_read_update_info(png_ptr, info_ptr);
-	//// Read Info and update info
-
-	//// get width, height and channels
-	//int width=info_ptr->width;
-	//int height=info_ptr->height;
-	//int channels=info_ptr->channels;
-
-	//sprite.width=width;
-	//sprite.height=height;
-	//BYTE *rgb_image=(BYTE*)malloc(width*height*channels);
-
-	//// Prepare sprite data memory allocation
-	//sprite.data=(DWORD*)malloc(width*height*sizeof(DWORD));
-
-	////and this.. I am not sure, It takes a row pointer & use it to fill a row memory area
-	//png_byte **row_pointers=(png_byte**)malloc(height*sizeof(png_byte*));
-
-	//// then it travels trough height and use the rgb_image sized plus each row product width and channels (¡?)
-	//for(int i=0;i<height;i++)
-	//	row_pointers[i]=(png_byte*)(rgb_image+i*width*channels);
-
-	//// Duh, it seems we do that in order to fullfill this functions
-	//png_set_rows(png_ptr, info_ptr, (png_bytepp)(&row_pointers));
-	//png_read_image(png_ptr, row_pointers);
-	//png_read_end(png_ptr, NULL);
-	//png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-	//fclose(fp);
-	//free(row_pointers);
-
-	//// so, then we keep rgb_image, width, height & channels in order to fullfill the pixel data info inside data
-	//for(int y=0;y<height;y++)
-	//{
-	//	int si=y*width*channels;
-	//	int di=y*width;
-	//	for(int x=0;x<width;x++)
-	//	{
-	//		DWORD pixel=0xFF000000;
-	//		pixel|=rgb_image[si+0]<<16;
-	//		pixel|=rgb_image[si+1]<<8;
-	//		pixel|=rgb_image[si+2];
-	//		if(rgb_image[si+0]==255 &&
-	//		   rgb_image[si+1]==240 &&
-	//		   rgb_image[si+2]==200)
-	//			pixel=0x00FFF0C8;
-	//		sprite.data[di++]=pixel;
-	//		si+=channels;
-	//	}
-	//}
-	//free(rgb_image);
-	//GCAdd(sprite.data, GCMALLOC);
-	//return true;
-
-#pragma endregion
 
 }
 
@@ -373,6 +317,35 @@ void WritePixel(int x,int y,int rgb)
 			}
 		}
 	}
+}
+
+//Fast vertical line from (x,y1) to (x,y2), with rgb color
+bool verLine(int sx, int sy1, int sy2, const DWORD& color)
+{
+  if(sy2 < sy1)
+	{sy1 += sy2; sy2 = sy1 - sy2; sy1 -= sy2;} //swap y1 and y2
+  if(sy2 < 0 || sy1 >= HEIGHT  || sx < 0 || sx >= WIDTH) 
+	  return 0; //no single point of the line is on screen
+
+  //if(sy1 < 0) 
+	 // sy1 = 0;			//clip top
+  //if(sy2 >= WIDTH) 
+	 // sy2 = HEIGHT - 1;	//clip bottom
+
+  	for (int y=sy1 ; y < sy2 ; y++)
+	{
+		if ( y < 0 ) continue;
+		if ( y >= HEIGHT) break;
+		//int i=y*WIDTH+sx;
+
+		//for (int x=sx ; x < sx+w ; x++ )
+		//	if ( x >= 0 && x <= HALF_W )
+		//		screen[i++] = color;
+		if ( sx >= 0 && sx <= WIDTH )
+			ptc_screen[y*WIDTH+sx] = color;
+	}
+   
+  return 1;
 }
 
 }; // end GFx namespace

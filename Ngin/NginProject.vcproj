@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="TinyPTCorona"
+	Name="Ngin"
 	ProjectGUID="{8FA735DF-EAF3-49A0-B036-7997DEDEE322}"
 	RootNamespace="TinyPTCWIN"
 	Keyword="Win32Proj"
@@ -188,7 +188,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Mad.cpp"
+				RelativePath=".\Main.cpp"
 				>
 			</File>
 			<File
