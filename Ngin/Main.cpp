@@ -55,10 +55,9 @@ int worldMap[mapWidth][mapHeight]=
   {4,4,4,4,4,4,4,4,4,4,1,1,1,2,2,2,2,2,2,3,3,3,3,3}
 };
 
-DWORD buffer[WIDTH][HEIGHT];
-//DWORD buffer[WIDTH*HEIGHT];
+//DWORD buffer[WIDTH][HEIGHT];
+DWORD buffer[WIDTH*HEIGHT];
 //Uint32 buffer[WIDTH][HEIGHT];
-
 
 
 void UpdateInput(Vector2D & pos, Vector2D & dir, Vector2D & plane, float lfTimestep)
@@ -123,24 +122,14 @@ int main()
 
 	unsigned long luiLastTime = timeGetTime(); 
 
-	DWORD textures[8][texWidth * texHeight];
-	//std::vector<DWORD> textures[8];
+	//std::vector<Uint32> textures[8];
+	//for(int i = 0; i < 8; i++) textures[i].resize(texWidth * texHeight);
+	DWORD textures[8][texWidth*texHeight];
 
-	//for(int i = 0; i < 8; i++) 
-	//	textures[i].resize(texWidth * texHeight);
-
-	ptc_open( "Raycaster", WIDTH, HEIGHT);
-	bool success = true;
+	bool success = ptc_open( "Raycaster", WIDTH, HEIGHT);
 
 	  //generate some textures
-	if(! gfx::loadImage(textures[0], "pics/eagle.png") ) success = false;
-	if(! gfx::loadImage(textures[1], "pics/redbrick.png") ) success = false;
-	if(! gfx::loadImage(textures[2], "pics/purplestone.png") ) success = false;
-	if(! gfx::loadImage(textures[3], "pics/greystone.png") ) success = false;
-	if(! gfx::loadImage(textures[4], "pics/bluestone.png") ) success = false;
-	if(! gfx::loadImage(textures[5], "pics/mossy.png") ) success = false;
-	if(! gfx::loadImage(textures[6], "pics/wood.png") ) success = false;
-	if(! gfx::loadImage(textures[7], "pics/colorstone.png") ) success = false;
+	 //generate some textures
 	 // for(int x = 0; x < texWidth; x++)
 	 // for(int y = 0; y < texHeight; y++)
 	 // {
@@ -148,7 +137,7 @@ int main()
 		////int xcolor = x * 256 / texWidth;
 		//int ycolor = y * 256 / texHeight;
 		//int xycolor = y * 128 / texHeight + x * 128 / texWidth;
-		//textures[0][texWidth * y + x] = 65536 * 254 * (x == y && x != texWidth - y); //flat red texture with black cross
+		//textures[0][texWidth * y + x] = 65536 * 254 * (x != y && x != texWidth - y); //flat red texture with black cross
 		//textures[1][texWidth * y + x] = xycolor + 256 * xycolor + 65536 * xycolor; //sloped greyscale
 		//textures[2][texWidth * y + x] = 256 * xycolor + 65536 * xycolor; //sloped yellow gradient
 		//textures[3][texWidth * y + x] = xorcolor + 256 * xorcolor + 65536 * xorcolor; //xor greyscale
@@ -157,6 +146,16 @@ int main()
 		//textures[6][texWidth * y + x] = 65536 * ycolor; //red gradient
 		//textures[7][texWidth * y + x] = 128 + 256 * 128 + 65536 * 128; //flat grey texture
 	 // }
+
+	if(! gfx::loadImage(textures[0], "pics/eagle.png") ) success = false;
+	if(! gfx::loadImage(textures[1], "pics/redbrick.png") ) success = false;
+	if(! gfx::loadImage(textures[2], "pics/purplestone.png") ) success = false;
+	if(! gfx::loadImage(textures[3], "pics/greystone.png") ) success = false;
+	if(! gfx::loadImage(textures[4], "pics/bluestone.png") ) success = false;
+	if(! gfx::loadImage(textures[5], "pics/mossy.png") ) success = false;
+	if(! gfx::loadImage(textures[6], "pics/wood.png") ) success = false;
+	if(! gfx::loadImage(textures[7], "pics/colorstone.png") ) success = false;
+	
 
 	if (! gfx::LoadSprite(Test, "calvin1.png")) success = false;
 	if(!success)
@@ -178,7 +177,7 @@ int main()
 			//calculate ray position and direction 
 			double cameraX = 2 * x / double(WIDTH) - 1; //x-coordinate in camera space
 			Vector2D rayPos = {pos.x, pos.y};
-			Vector2D rayDir = {dir.x + plane.x * cameraX, dir.y + plane.y * cameraX};
+			Vector2D rayDir = { dir.x + plane.x * cameraX, dir.y + plane.y * cameraX };
 
 			// which box in the map are we
 			int mapX = (int)rayPos.x;
@@ -263,11 +262,10 @@ int main()
 
 			//calculate value of wallX
 			double wallX = 0; //where exactly the wall was hit
-			  //Calculate distance of perpendicular ray (oblique distance will give fisheye effect!)
 			if (side == 1) 
-				perpWallDist = fabs((mapX - rayPos.x+ (1 - stepX) / 2) / rayDir.x);
+				wallX = rayPos.x + ((mapY - rayPos.y + (1 - stepY) / 2) / rayDir.y) * rayDir.x;
 			else           
-				perpWallDist = fabs((mapY - rayPos.y + (1 - stepY) / 2) / rayDir.y);
+				wallX = rayPos.y + ((mapX - rayPos.x + (1 - stepX) / 2) / rayDir.x) * rayDir.y;
 			wallX -= floor((wallX));
 
 			//x coordinate on the texture
@@ -279,23 +277,23 @@ int main()
 			{
 				int d = y * 256 - HEIGHT * 128 + lineHeight * 128;  //256 and 128 factors to avoid floats
 				int texY = ((d * texHeight) / lineHeight) / 256;
-				DWORD color = textures[texNum][texHeight * texY + texX];
+				int color = textures[texNum][texHeight * texY + texX];
 				//make color darker for y-sides: R, G and B byte each divided through two with a "shift" and an "and"
 				if(side == 1) color = (color >> 1) & 8355711;
-				buffer[x][y] = color;
-				//buffer[y*WIDTH + x] = color;
+				buffer[y*WIDTH + x] = color;
+				//buffer[x][y] = color;
 			}
 
 		}
 
-		gfx::drawBuffer(buffer[0]);
-		//gfx::BufferDraw(buffer);
+		//gfx::drawBuffer(buffer[0]);
+		gfx::BufferDraw(buffer);
  
 
 		for(int x = 0; x < WIDTH; x++) 
 			for(int y = 0; y < HEIGHT; y++) 
-				//buffer[y*WIDTH + x] = 0;
-				buffer[x][y] = 0; //clear the buffer instead of cls()
+				buffer[y*WIDTH + x] = 0;
+				//buffer[x][y] = 0; //clear the buffer instead of cls()
 
 		// Calculando el tiempo en segundos
         unsigned long luiActualTime = timeGetTime(); 

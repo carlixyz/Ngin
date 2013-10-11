@@ -406,7 +406,7 @@ bool loadImage(DWORD* buffer, char* filename)
 
 
 
-bool loadImage(Uint32* buffer, char* filename)
+bool LoadImage(std::vector<Uint32> & buffer, char* filename)
 {
 	corona::Image* img;
 
@@ -423,7 +423,7 @@ bool loadImage(Uint32* buffer, char* filename)
 
 	//buffer = new DWORD[width*height] ;
 
-	Uint32* Pix = (Uint32*)img->getPixels();
+	BYTE* Pix = (BYTE*)img->getPixels();
 	//
 
 	for (int i = 0; i < width * height; ++i) 
