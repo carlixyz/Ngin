@@ -348,7 +348,98 @@ bool verLine(int sx, int sy1, int sy2, const DWORD& color)
    
   return 1;
 }
+void BufferDraw(DWORD buffer[])
+{
+	for(int x = 0; x < WIDTH; x++) 
+		for(int y = 0; y < HEIGHT; y++) 
+			ptc_screen[y*WIDTH+x] = buffer[y*WIDTH+x]; //clear the buffer instead of cls()
+}
+void DrawBuffer(DWORD buffer[WIDTH][HEIGHT])
+{
+	for(int x = 0; x < WIDTH; x++) 
+		for(int y = 0; y < HEIGHT; y++) 
+			ptc_screen[y*WIDTH+x] = buffer[x][y]; //clear the buffer instead of cls()
+}
+//Draws a buffer of pixels to the screen
+void drawBuffer(DWORD* buffer )
+{
+	for(int x = 0; x < WIDTH; x++) 
+		for(int y = 0; y < HEIGHT; y++) 
+			ptc_screen[y*WIDTH+x] = buffer[HEIGHT * x + y]; //clear the buffer instead of cls()
+}
 
+
+bool loadImage(DWORD* buffer, char* filename)
+{
+	corona::Image* img;
+
+	img = corona::OpenImage(filename);
+	if(img==NULL) return false;
+
+// get width, height and channels
+	int width	= img->getWidth();
+	int height	= img->getHeight();
+	int channels = 3;
+
+	if ( img->getFormat() == corona::PF_R8G8B8 /*|| img->getFormat() == corona::PF_B8G8R8*/)// Iphone inverted
+		channels = 3;
+
+	//buffer = new DWORD[width*height] ;
+
+	BYTE* Pix = (BYTE*)img->getPixels();
+	//
+
+	for (int i = 0; i < width * height; ++i) 
+	{
+		DWORD pixel=0xFF000000;
+
+		pixel|= *Pix++ <<16;
+		pixel|= *Pix++ <<8;
+		pixel|= *Pix++;
+
+		buffer[i]=pixel;
+	}
+
+	//GCAdd(buffer, GCNEWARRAY);
+	return true;
+}
+
+
+
+bool loadImage(Uint32* buffer, char* filename)
+{
+	corona::Image* img;
+
+	img = corona::OpenImage(filename);
+	if(img==NULL) return false;
+
+// get width, height and channels
+	int width	= img->getWidth();
+	int height	= img->getHeight();
+	int channels = 3;
+
+	if ( img->getFormat() == corona::PF_R8G8B8 /*|| img->getFormat() == corona::PF_B8G8R8*/)// Iphone inverted
+		channels = 3;
+
+	//buffer = new DWORD[width*height] ;
+
+	Uint32* Pix = (Uint32*)img->getPixels();
+	//
+
+	for (int i = 0; i < width * height; ++i) 
+	{
+		Uint32 pixel=0xFF000000;
+
+		pixel|= *Pix++ <<16;
+		pixel|= *Pix++ <<8;
+		pixel|= *Pix++;
+
+		buffer[i]=pixel;
+	}
+
+	//GCAdd(buffer, GCNEWARRAY);
+	return true;
+}
 }; // end GFx namespace
 
 
