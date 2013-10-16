@@ -105,14 +105,13 @@ DWORD buffer[WIDTH*HEIGHT];
 //Uint32 buffer[WIDTH][HEIGHT];
 
 
-	POINT OldMousePos ;
-	POINT NewMousePos ;
-
+POINT MousePos ;
+int ScreenW = 0;
+int ScreenH = 0;
 
 void UpdateInput(Vector2D & pos, Vector2D & dir, Vector2D & plane, float lfTimestep)
 {
-		GetCursorPos(&NewMousePos);
-		//SetCursorPos( HALF_W,HALF_W);
+		GetCursorPos(&MousePos);
 
 		//speed modifiers
 		double moveSpeed = lfTimestep * 5.0f; //the constant value is in squares/second
@@ -141,12 +140,12 @@ void UpdateInput(Vector2D & pos, Vector2D & dir, Vector2D & plane, float lfTimes
 			  if(worldMap[int(pos.x)][int(pos.y - plane.y * moveSpeed)] == false) pos.y -= plane.y * moveSpeed;
 			}
 
-			if ( OldMousePos.x - NewMousePos.x )
+			if ( MousePos.x != ScreenW>>2 )
 			{
 
 				double oldDirX = dir.x;
 
-				double tempRot = (double)(OldMousePos.x - NewMousePos.x) * lfTimestep * .5;
+				double tempRot = (double)((ScreenW>>2) - MousePos.x) * lfTimestep * .5;
 
 			    dir.x = dir.x * cos(tempRot) - dir.y * sin( tempRot);
 			    dir.y = oldDirX * sin(tempRot) + dir.y * cos(tempRot);
@@ -154,7 +153,7 @@ void UpdateInput(Vector2D & pos, Vector2D & dir, Vector2D & plane, float lfTimes
 			    plane.x = plane.x * cos(tempRot) - plane.y * sin(tempRot);
 			   plane.y = oldPlaneX * sin(tempRot) + plane.y * cos(tempRot);
 
-				OldMousePos = NewMousePos;
+				SetCursorPos( ScreenW>>2,ScreenH>>2);
 			}
 
 			if ( (GetAsyncKeyState(VK_RIGHT)&KF_UP)  )		//rotate to the right 		
@@ -183,9 +182,16 @@ void UpdateInput(Vector2D & pos, Vector2D & dir, Vector2D & plane, float lfTimes
 
 int main()
 {
+#ifdef __PTC_WINDOWED__
+	ScreenW = GetSystemMetrics(SM_CXSCREEN)*2;
+	ScreenH = GetSystemMetrics(SM_CYSCREEN)*2;
+#else
+	ScreenW = GetSystemMetrics(SM_CXSCREEN);
+	ScreenH = GetSystemMetrics(SM_CYSCREEN);
+#endif
 
-	GetCursorPos(&NewMousePos);
-	OldMousePos = NewMousePos;
+	GetCursorPos(&MousePos);
+	SetCursorPos( ScreenW,ScreenH);
 
 	Vector2D pos	= {22, 12};		//x and y start position
 	Vector2D dir	= {-1, 0};		//initial direction vector
@@ -500,6 +506,8 @@ int main()
 	ptc_close();
 	ExitProcess(0);
 }
+
+// Get the horizontal and vertical screen sizes in pixel
 
 //sort algorithm
 void combSort(int* order, double* dist, int amount)
