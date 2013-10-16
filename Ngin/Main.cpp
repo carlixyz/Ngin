@@ -105,40 +105,59 @@ DWORD buffer[WIDTH*HEIGHT];
 //Uint32 buffer[WIDTH][HEIGHT];
 
 
-
+	POINT OldMousePos ;
+	POINT NewMousePos ;
 
 
 void UpdateInput(Vector2D & pos, Vector2D & dir, Vector2D & plane, float lfTimestep)
 {
+		GetCursorPos(&NewMousePos);
+		//SetCursorPos( HALF_W,HALF_W);
 
 		//speed modifiers
 		double moveSpeed = lfTimestep * 5.0f; //the constant value is in squares/second
 		double rotSpeed = lfTimestep * 3.0f; //the constant value is in radians/second
 
 		//if(GetAsyncKeyState(VK_RIGHT)&KF_UP)
-		    if (GetAsyncKeyState(VK_UP)&KF_UP)
+		    if (GetAsyncKeyState(VK_UP)&KF_UP || GetAsyncKeyState(0x57)&KF_UP)
 			{
 			  if(worldMap[int(pos.x + dir.x * moveSpeed)][int(pos.y)] == false) pos.x += dir.x * moveSpeed;
 			  if(worldMap[int(pos.x)][int(pos.y + dir.y * moveSpeed)] == false) pos.y += dir.y * moveSpeed;
 			}
-			if (GetAsyncKeyState(VK_DOWN)&KF_UP)		//move backwards if no wall behind you
+			if (GetAsyncKeyState(VK_DOWN)&KF_UP || GetAsyncKeyState(0x53)&KF_UP)		//move backwards if no wall behind you
 			{
 			  if(worldMap[int(pos.x - dir.x * moveSpeed)][int(pos.y)] == false) pos.x -= dir.x * moveSpeed;
 			  if(worldMap[int(pos.x)][int(pos.y - dir.y * moveSpeed)] == false) pos.y -= dir.y * moveSpeed;
 			}
   
-		    if (GetAsyncKeyState(VK_RSHIFT)&KF_UP)		//move rightside if no wall behind you
+		    if (GetAsyncKeyState(VK_RSHIFT)&KF_UP || GetAsyncKeyState(0x44)&KF_UP)		//move rightside if no wall behind you
 			{
 			if(worldMap[int(pos.x + plane.x * moveSpeed)][int(pos.y)] == false) pos.x += plane.x * moveSpeed;
 			  if(worldMap[int(pos.x)][int(pos.y + plane.y * moveSpeed)] == false) pos.y += plane.y * moveSpeed;
 			}
-			if (GetAsyncKeyState(VK_LSHIFT)&KF_UP)		//move leftside if no wall behind you
+			if (GetAsyncKeyState(VK_LSHIFT)&KF_UP || GetAsyncKeyState(0x41)&KF_UP)		//move leftside if no wall behind you
 			{
 			  if(worldMap[int(pos.x - plane.x * moveSpeed)][int(pos.y)] == false) pos.x -= plane.x * moveSpeed;
 			  if(worldMap[int(pos.x)][int(pos.y - plane.y * moveSpeed)] == false) pos.y -= plane.y * moveSpeed;
 			}
 
-			if (GetAsyncKeyState(VK_RIGHT)&KF_UP)		//rotate to the right 		
+			if ( OldMousePos.x - NewMousePos.x )
+			{
+
+				double oldDirX = dir.x;
+
+				double tempRot = (double)(OldMousePos.x - NewMousePos.x) * lfTimestep * .5;
+
+			    dir.x = dir.x * cos(tempRot) - dir.y * sin( tempRot);
+			    dir.y = oldDirX * sin(tempRot) + dir.y * cos(tempRot);
+			    double oldPlaneX = plane.x;
+			    plane.x = plane.x * cos(tempRot) - plane.y * sin(tempRot);
+			   plane.y = oldPlaneX * sin(tempRot) + plane.y * cos(tempRot);
+
+				OldMousePos = NewMousePos;
+			}
+
+			if ( (GetAsyncKeyState(VK_RIGHT)&KF_UP)  )		//rotate to the right 		
 			{
 			  //both camera direction and camera plane must be rotated
 			  double oldDirX = dir.x;
@@ -149,7 +168,7 @@ void UpdateInput(Vector2D & pos, Vector2D & dir, Vector2D & plane, float lfTimes
 			  plane.y = oldPlaneX * sin(-rotSpeed) + plane.y * cos(-rotSpeed);
 			}
 			
-			if (GetAsyncKeyState(VK_LEFT)&KF_UP)		//rotate to the left	
+			if (GetAsyncKeyState(VK_LEFT)&KF_UP  )		//rotate to the left	
 			{
 			  //both camera direction and camera plane must be rotated
 			  double oldDirX = dir.x;
@@ -159,10 +178,14 @@ void UpdateInput(Vector2D & pos, Vector2D & dir, Vector2D & plane, float lfTimes
 			  plane.x = plane.x * cos(rotSpeed) - plane.y * sin(rotSpeed);
 			  plane.y = oldPlaneX * sin(rotSpeed) + plane.y * cos(rotSpeed);
 			}
+
 }
 
 int main()
 {
+
+	GetCursorPos(&NewMousePos);
+	OldMousePos = NewMousePos;
 
 	Vector2D pos	= {22, 12};		//x and y start position
 	Vector2D dir	= {-1, 0};		//initial direction vector
